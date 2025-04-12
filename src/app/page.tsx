@@ -2,8 +2,11 @@ import { getDailyPrompt } from "@/actions/public";
 import { Button } from "@/components/atoms/button";
 import { Card, CardContent } from "@/components/atoms/card";
 import { Skeleton } from "@/components/atoms/skeleton";
+import TestimonialCarousel from "@/components/molecules/TestimonialCarousel";
 import { BarChart2, Book, Calendar, ChevronRight, FileText, Lock, Sparkles } from "lucide-react";
 import Link from "next/link";
+import faqs from '@/data/const/faq.json';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/atoms/accordion";
 
 const features = [
   {
@@ -180,16 +183,13 @@ export default async function Home() {
       </div>
 
       {/* Testimonials Carousel */}
-      {/*
-<TestimonialCarousel />
-      */}
+      <TestimonialCarousel />
 
       {/* FAQ Section */}
       <div className="mt-24">
         <h2 className="text-3xl font-bold text-center text-orange-900 mb-12">
           Frequently Asked Questions
         </h2>
-        {/*
         <Accordion type="single" collapsible className="w-full mx-auto">
           {faqs.map((faq, index) => (
             <AccordionItem key={index} value={`item-${index}`}>
@@ -202,7 +202,6 @@ export default async function Home() {
             </AccordionItem>
           ))}
         </Accordion>
-        */}
       </div>
 
       {/* CTA Section */}

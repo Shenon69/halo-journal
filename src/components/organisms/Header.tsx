@@ -4,8 +4,11 @@ import Link from "next/link";
 import { Button } from "../atoms/button";
 import { FolderOpen, PenBox } from "lucide-react";
 import UserMenu from "../molecules/UserMenu";
+import { checkUser } from "@/lib/checkUser";
 
-export default function Header() {
+export default async function Header() {
+  await checkUser();
+
   return (
     <header className="container mx-auto">
       <nav className="py-6 px-4 flex justify-between items-center">
