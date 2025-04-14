@@ -1,8 +1,12 @@
+"use server";
+
 import { MOODS } from "@/data/const/moods";
 import db from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";
 import { getPixabayImage } from "./public";
 import { revalidatePath } from "next/cache";
+import { request } from "@arcjet/next";
+import aj from "@/lib/arcjet";
 
 interface JournalEntry {
   id: string
@@ -15,12 +19,28 @@ interface JournalEntry {
   collectionId?: string
 }
 
-export async function createJournalEntry(data: JournalEntry) {
+export async function createJournalEntry(data: Omit<JournalEntry, 'id' | 'moodImageUrl'>) {
   try {
     const { userId } = await auth()
     if (!userId) throw new Error("User not authenticated");
 
     // Archjet rate limiting
+    const req = await request()
+    const descition = await aj.protect(req, {
+      userId,
+      requested: 1
+    })
+
+    if (descition.isDenied()) {
+      if (descition.reason.isRateLimit()) {
+        const { remaining, reset } = descition.reason
+        console.error("Rate limit exceeded", { remaining, reset })
+
+        throw new Error("Too many requests, please try again later")
+      }
+
+      throw new Error("Request denied")
+    }
 
     const user = await db.user.findUnique({
       where: { clerkUserId: userId }

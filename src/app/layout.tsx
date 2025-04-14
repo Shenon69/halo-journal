@@ -4,6 +4,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import Header from "@/components/organisms/Header";
 import { ClerkProvider } from "@clerk/nextjs"
+import { Toaster } from "sonner";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -34,6 +35,7 @@ export default function RootLayout({
             <Header />
             <main className="min-h-screen">
               {children}
+              <Toaster richColors />
             </main>
             <footer className="bg-orange-300 py-12 bg-opacity-10">
               <div className="container mx-auto px-4 text-center text-gray-900">
