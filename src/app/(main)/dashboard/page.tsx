@@ -1,6 +1,7 @@
 import { getCollections } from "@/actions/collection"
 import { getJournalEntries } from "@/actions/journal"
 import Collections from "@/components/organisms/Collections"
+import MoodAnalytics from "@/components/organisms/MoodAnalytics"
 
 export interface DBJournalEntry {
   id: string
@@ -54,9 +55,8 @@ export default async function Dashboard() {
 
   return (
     <div className="px-4 py-8 space-y-8">
-      {/* Analytics Section */}
       <section className="space-y-4">
-        {/* <MoodAnalytics />*/}
+        <MoodAnalytics />
       </section>
 
       <Collections
