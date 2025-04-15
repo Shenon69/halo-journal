@@ -1,6 +1,6 @@
 "use server";
 
-import { MOODS } from "@/data/const/moods";
+import { getMoodById, MOODS } from "@/data/const/moods";
 import db from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";
 import { getPixabayImage } from "./public";
@@ -8,7 +8,7 @@ import { revalidatePath } from "next/cache";
 import { request } from "@arcjet/next";
 import aj from "@/lib/arcjet";
 
-interface JournalEntry {
+export interface JournalEntry {
   id: string
   title: string
   content: string
@@ -75,5 +75,62 @@ export async function createJournalEntry(data: Omit<JournalEntry, 'id' | 'moodIm
   } catch (error) {
     console.error("Error creating journal entry:", error);
     throw new Error("Failed to create journal entry");
+  }
+}
+
+export async function getJournalEntries({
+  collectionId,
+  orderBy = "desc",
+}: {
+  collectionId?: string;
+  orderBy?: "asc" | "desc";
+} = {}) {
+  try {
+    const { userId } = await auth();
+    if (!userId) throw new Error("Unauthorized");
+
+    const user = await db.user.findUnique({
+      where: { clerkUserId: userId },
+    });
+    if (!user) throw new Error("User not found");
+
+    const entries = await db.entry.findMany({
+      where: {
+        userId: user.id,
+        ...(collectionId === "unorganized"
+          ? { collectionId: null }
+          : collectionId
+            ? { collectionId }
+            : {}),
+      },
+      include: {
+        collection: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: orderBy,
+      },
+    });
+
+    const entriesWithMoodData = entries.map((entry) => ({
+      ...entry,
+      moodData: getMoodById(entry.mood),
+    }));
+
+    return {
+      success: true,
+      data: {
+        entries: entriesWithMoodData,
+      },
+    };
+  } catch (error) {
+    if (error instanceof Error)
+      return { success: false, error: error.message };
+
+    return { success: false, error: "Failed to fetch journal entries" };
   }
 }
