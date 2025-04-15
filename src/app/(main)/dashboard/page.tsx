@@ -51,8 +51,6 @@ export default async function Dashboard() {
     return acc
   }, {})
 
-  console.log("Entries by Collection:", entriesByCollection)
-
   return (
     <div className="px-4 py-8 space-y-8">
       <section className="space-y-4">
