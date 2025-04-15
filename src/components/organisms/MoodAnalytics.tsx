@@ -65,7 +65,7 @@ const MoodAnalytics = () => {
             {format(parseISO(label), "MMM d, yyyy")}
           </p>
           <p className="text-orange-600">Average Mood: {payload[0].value}</p>
-          {/*<p className="text-blue-600">Entries: {payload[1].value}</p>*/}
+          <p className="text-blue-600">Entries: {payload[1].value}</p>
         </div>
       );
     }
@@ -173,7 +173,8 @@ const MoodAnalytics = () => {
                     <YAxis
                       yAxisId="right"
                       orientation="right"
-                      domain={[0, "auto"]}
+                      name="No. of Entries"
+                      domain={[0, 10]}
                     />
                     <Tooltip content={<CustomTooltip />} />
                     <Legend />
@@ -185,9 +186,7 @@ const MoodAnalytics = () => {
                       name="Average Mood"
                       strokeWidth={2}
                     />
-                    {/*
-
-                      <Line
+                    <Line
                       yAxisId="right"
                       type="monotone"
                       dataKey="entryCount"
@@ -195,7 +194,6 @@ const MoodAnalytics = () => {
                       name="Number of Entries"
                       strokeWidth={2}
                     />
-                      */}
                   </LineChart>
                 </ResponsiveContainer>
               </div>
