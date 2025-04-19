@@ -18,6 +18,7 @@ import useFetch from '@/hooks/useFetch';
 import { Collection, createCollection, getCollections } from '@/actions/collection';
 import CollectionForm from '@/components/molecules/CollectionForm';
 import { Loader2 } from 'lucide-react';
+import { analyzeGeminiAI } from '@/actions/ai';
 
 const ReactQuill = dynamic(() => import("react-quill-new"), { ssr: false })
 
@@ -60,6 +61,9 @@ export default function WritePage() {
     fn: createCollectionFn,
     data: createdCollection,
   } = useFetch(createCollection);
+
+  const { loading: isAnalyzing, fn: analyzeFunction, data: analyzedData } = useFetch(analyzeGeminiAI)
+
   const {
     register,
     handleSubmit,
@@ -151,13 +155,23 @@ export default function WritePage() {
   }, [actionResult, actionLoading]);
 
   const onSubmit = handleSubmit(async (data: any) => {
-    const mood = getMoodById(data.mood);
-    actionFn({
-      ...data,
-      moodScore: mood.score,
-      moodQuery: mood.pixabayQuery,
-      ...(isEditMode && { id: editId }),
-    });
+    // const mood = getMoodById(data.mood);
+    // actionFn({
+    //   ...data,
+    //   moodScore: mood.score,
+    //   moodQuery: mood.pixabayQuery,
+    //   ...(isEditMode && { id: editId }),
+    // });
+    const content = data.content
+    await analyzeFunction(content)
+    console.log("Analyzed data", analyzedData)
+
+    if (!analyzedData) {
+      toast.error("Failed to analyze entry");
+      return;
+    }
+
+    toast.success(`Analyzed data: ${analyzedData.pixabayQuery} ${analyzedData.emoji}`)
   });
 
   const formData = watch();
@@ -324,7 +338,7 @@ export default function WritePage() {
           <Button
             type="submit"
             variant="journal"
-            disabled={actionLoading || !isDirty}
+            disabled={actionLoading || !isDirty || isAnalyzing}
           >
             {actionLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {isEditMode ? "Update" : "Publish"}

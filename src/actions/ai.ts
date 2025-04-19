@@ -6,12 +6,11 @@ import { PromptTemplate } from '@langchain/core/prompts';
 
 const parser = StructuredOutputParser.fromZodSchema(
   z.object({
-    mood: z.string().describe('the mood of the person who wrote the journal entry based on the journal entry'),
-    subject: z.string().describe('the subject of the journal entry. This could be a short subject made from the content in the entry.'),
-    negative: z.boolean().describe('is the journal entry negative? (i.e. does it contain a huge amount of negative emotions?).'),
-    summary: z.string().describe('very short summary of the entire entry. ( maximmum one sentence)'),
-    color: z.string().describe('a hexidecimal color code that represents the mood of the entry. Example #0101fe for blue representing happiness.'),
-    sentimentScore: z.number().describe('sentiment of the text and rated on a scale from 0 to 10, where 0 is extremely negative, 5 is neutral, and 10 is extremely positive.'),
+    mood: z.string().describe('A mood label that describes the overall emotion of the journal entry, like "Happy", "Sad", "Anxious".'),
+    emoji: z.string().describe('A single emoji that best represents the mood. Example: "😊" for Happy, "😢" for Sad.'),
+    sentimentScore: z.number().describe('A sentiment score rated from 0 to 10. 0 means extremely negative, 5 is neutral, 10 is extremely positive.'),
+    pixabayQuery: z.string().describe('A string of keywords separated by "+" signs suitable for searching Pixabay for an image that matches the mood. Example: "happy+smile+sunshine".'),
+    color: z.string().describe('A HEX color code representing the mood visually. Example: "#facc15" for yellow representing joy.'),
   })
 );
 
