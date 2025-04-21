@@ -6,7 +6,7 @@ import { PromptTemplate } from '@langchain/core/prompts';
 
 const parser = StructuredOutputParser.fromZodSchema(
   z.object({
-    mood: z.string().describe('A mood label that describes the overall emotion of the journal entry, like "Happy", "Sad", "Anxious".'),
+    mood: z.string().describe('A mood label that describes the overall emotion of the person who wrote the journal entry.'),
     emoji: z.string().describe('A single emoji that best represents the mood. Example: "😊" for Happy, "😢" for Sad.'),
     sentimentScore: z.number().describe('A sentiment score rated from 0 to 10. 0 means extremely negative, 5 is neutral, 10 is extremely positive.'),
     pixabayQuery: z.string().describe('A string of keywords separated by "+" signs suitable for searching Pixabay for an image that matches the mood. Example: "happy+smile+sunshine".'),
