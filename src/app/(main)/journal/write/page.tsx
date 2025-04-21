@@ -256,7 +256,10 @@ export default function WritePage() {
         <div className="space-y-2">
           <label className="text-sm font-medium">Mood Analysis</label>
           <div className="p-4 border rounded-md bg-muted/30">
-            <p>Your mood will be automatically analyzed by AI when you submit your entry.</p>
+          {
+            !analyzedData &&  
+            <p>Your mood will be automatically analyzed by AI when you start writing</p>
+          }
             {isAnalyzing && (
               <div className="flex items-center space-x-2 mt-2">
                 <Loader2 className="h-4 w-4 animate-spin text-orange-500" />
