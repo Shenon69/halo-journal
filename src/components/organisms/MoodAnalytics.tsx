@@ -24,7 +24,7 @@ import {
   SelectValue,
 } from "@/components/atoms/select";
 import Link from "next/link";
-import { getMoodById, getMoodTrend } from "@/data/const/moods";
+import { getMoodTrend, getMoodEmoji } from "@/lib/utils";
 import { getAnalytics } from "@/actions/analytics";
 
 const timeOptions = [
@@ -140,7 +140,7 @@ const MoodAnalytics = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold flex items-center gap-2">
-                  {getMoodById(stats.mostFrequentMood)?.emoji}{" "}
+                  {getMoodEmoji(stats.averageScore)}{" "}
                   {getMoodTrend(stats.averageScore)}
                 </div>
               </CardContent>

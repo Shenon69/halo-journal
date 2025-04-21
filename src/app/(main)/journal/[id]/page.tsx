@@ -2,7 +2,7 @@ import { getJournalEntry } from "@/actions/journal"
 import { Badge } from "@/components/atoms/badge";
 import DeleteDialog from "@/components/atoms/delete-dialog";
 import EditButton from "@/components/atoms/edit-button";
-import { getMoodById } from "@/data/const/moods";
+import { getMoodColor, getMoodEmoji } from "@/lib/utils";
 import { format } from "date-fns";
 import Image from "next/image";
 import Link from "next/link";
@@ -10,7 +10,11 @@ import Link from "next/link";
 export default async function JournalPage({ params }) {
   const { id } = params
   const entry = await getJournalEntry(id)
-  const mood = getMoodById(entry.mood);
+  
+  // Create mood display data using entry properties directly
+  const moodColor = getMoodColor(entry.moodScore);
+  const moodEmoji = getMoodEmoji(entry.moodScore);
+  const moodLabel = entry.mood.charAt(0).toUpperCase() + entry.mood.slice(1);
 
   return (
     <>
@@ -58,12 +62,12 @@ export default async function JournalPage({ params }) {
             <Badge
               variant="outline"
               style={{
-                backgroundColor: `var(--${mood?.color}-50)`,
-                color: `var(--${mood?.color}-700)`,
-                borderColor: `var(--${mood?.color}-200)`,
+                backgroundColor: `var(--${moodColor}-50)`,
+                color: `var(--${moodColor}-700)`,
+                borderColor: `var(--${moodColor}-200)`,
               }}
             >
-              Feeling {mood?.label}
+              {moodEmoji} Feeling {moodLabel}
             </Badge>
           </div>
         </div>

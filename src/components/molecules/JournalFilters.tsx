@@ -5,13 +5,6 @@ import { Input } from "@/components/atoms/input";
 import { Button } from "@/components/atoms/button";
 import { Calendar } from "@/components/atoms/calendar";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/atoms/select";
-import {
   Popover,
   PopoverContent,
   PopoverTrigger,
@@ -19,7 +12,6 @@ import {
 import { format, isSameDay } from "date-fns";
 import { Calendar as CalendarIcon, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { MOODS } from "@/data/const/moods";
 import EntryCard from "./EntryCard";
 
 export function JournalFilters({ entries }) {
@@ -73,24 +65,9 @@ export function JournalFilters({ entries }) {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full"
-            prefix={<Search className="h-4 w-4 text-gray-400" />}
+            prefixIcon={<Search className="h-4 w-4 text-gray-400" />}
           />
         </div>
-
-        <Select value={selectedMood} onValueChange={setSelectedMood}>
-          <SelectTrigger className="w-[150px]">
-            <SelectValue placeholder="Filter by mood" />
-          </SelectTrigger>
-          <SelectContent>
-            {Object.values(MOODS).map((mood) => (
-              <SelectItem key={mood.id} value={mood.id}>
-                <span className="flex items-center gap-2">
-                  {mood.emoji} {mood.label}
-                </span>
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
 
         <Popover>
           <PopoverTrigger asChild>
