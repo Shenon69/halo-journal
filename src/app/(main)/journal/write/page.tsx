@@ -8,7 +8,6 @@ import { journalSchema } from '@/app/lib/schema';
 import { BarLoader } from 'react-spinners';
 import { Input } from '@/components/atoms/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/atoms/select';
-import { getMoodById, MOODS } from '@/data/const/moods';
 import { Button } from '@/components/atoms/button';
 import { createJournalEntry, getDraft, getJournalEntry, saveDraft, updateJournalEntry } from '@/actions/journal';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -18,6 +17,7 @@ import useFetch from '@/hooks/useFetch';
 import { Collection, createCollection, getCollections } from '@/actions/collection';
 import CollectionForm from '@/components/molecules/CollectionForm';
 import { Loader2 } from 'lucide-react';
+import { analyzeGeminiAI } from '@/actions/ai';
 
 const ReactQuill = dynamic(() => import("react-quill-new"), { ssr: false })
 
@@ -60,12 +60,14 @@ export default function WritePage() {
     fn: createCollectionFn,
     data: createdCollection,
   } = useFetch(createCollection);
+
+  const { loading: isAnalyzing, fn: analyzeFunction, data: analyzedData } = useFetch(analyzeGeminiAI)
+
   const {
     register,
     handleSubmit,
     control,
     setValue,
-    getValues,
     watch,
     reset,
     formState: { errors, isDirty },
@@ -101,6 +103,11 @@ export default function WritePage() {
         mood: existingEntry.mood || "",
         collectionId: existingEntry.collectionId || "",
       });
+      
+      // If editing, analyze the content with AI to get the updated mood data
+      if (existingEntry.content) {
+        analyzeFunction(existingEntry.content);
+      }
     } else if (draftData?.success && draftData?.data) {
       reset({
         title: draftData.data.title || "",
@@ -108,6 +115,11 @@ export default function WritePage() {
         mood: draftData.data.mood || "",
         collectionId: "",
       });
+      
+      // If loading from draft with content, analyze it
+      if (draftData.data.content) {
+        analyzeFunction(draftData.data.content);
+      }
     } else {
       reset({
         title: "",
@@ -150,14 +162,42 @@ export default function WritePage() {
     /* eslint-disable-next-line react-hooks/exhaustive-deps */
   }, [actionResult, actionLoading]);
 
+  // Add debounced content analyzer to analyze mood as user types
+  useEffect(() => {
+    const content = watch("content");
+    
+    // Only perform analysis when we have substantial content (at least 20 chars)
+    // and we're not already analyzing
+    if (content && content.length > 20 && !isAnalyzing) {
+      const timer = setTimeout(() => {
+        analyzeFunction(content);
+      }, 1500); // 1.5 second delay
+      
+      return () => clearTimeout(timer);
+    }
+  }, [watch("content")]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const onSubmit = handleSubmit(async (data: any) => {
-    const mood = getMoodById(data.mood);
+    // First analyze the content with AI
+    const content = data.content;
+    await analyzeFunction(content);
+    
+    if (!analyzedData) {
+      toast.error("Failed to analyze entry");
+      return;
+    }
+    
+    // Map the AI analyzed mood properties to the required format
     actionFn({
       ...data,
-      moodScore: mood.score,
-      moodQuery: mood.pixabayQuery,
+      mood: analyzedData.mood.toLowerCase(), // Convert to lowercase to match your mood IDs
+      moodScore: analyzedData.sentimentScore,
+      moodQuery: analyzedData.pixabayQuery,
       ...(isEditMode && { id: editId }),
     });
+    
+    // Show a toast with the detected mood
+    toast.success(`Entry analyzed as: ${analyzedData.emoji} ${analyzedData.mood}`);
   });
 
   const formData = watch();
@@ -214,35 +254,34 @@ export default function WritePage() {
         </div>
 
         <div className="space-y-2">
-          <label className="text-sm font-medium">How are you feeling?</label>
-          <Controller
-            name="mood"
-            control={control}
-            render={({ field }) => (
-              <Select onValueChange={field.onChange} value={field.value}>
-                <SelectTrigger className={errors.mood ? "border-red-500" : ""}>
-                  <SelectValue placeholder="Select a mood..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.values(MOODS).map((mood) => (
-                    <SelectItem key={mood.id} value={mood.id}>
-                      <span className="flex items-center gap-2">
-                        {mood.emoji} {mood.label}
-                      </span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          <label className="text-sm font-medium">Mood Analysis</label>
+          <div className="p-4 border rounded-md bg-muted/30">
+          {
+            !analyzedData &&  
+            <p>Your mood will be automatically analyzed by AI when you start writing</p>
+          }
+            {isAnalyzing && (
+              <div className="flex items-center space-x-2 mt-2">
+                <Loader2 className="h-4 w-4 animate-spin text-orange-500" />
+                <span className="text-sm text-muted-foreground">Analyzing your mood...</span>
+              </div>
             )}
-          />
-          {errors.mood && (
-            <p className="text-red-500 text-sm">{errors.mood.message}</p>
-          )}
+            {analyzedData && (
+              <div className="mt-2 p-3 bg-background rounded border">
+                <div className="flex items-center gap-2">
+                  <span className="text-xl">{analyzedData.emoji}</span>
+                  <span className="font-medium">{analyzedData.mood}</span>
+                  <span className="ml-auto text-sm text-muted-foreground">Score: {analyzedData.sentimentScore}/10</span>
+                </div>
+              </div>
+            )}
+          </div>
+          <input type="hidden" {...register("mood")} />
         </div>
 
         <div className="space-y-2">
           <label className="text-sm font-medium">
-            {getMoodById(getValues("mood"))?.prompt ?? "Write your thoughts..."}
+            Write your thoughts...
           </label>
           <Controller
             name="content"
@@ -324,7 +363,7 @@ export default function WritePage() {
           <Button
             type="submit"
             variant="journal"
-            disabled={actionLoading || !isDirty}
+            disabled={actionLoading || !isDirty || isAnalyzing}
           >
             {actionLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {isEditMode ? "Update" : "Publish"}

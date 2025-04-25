@@ -3,7 +3,7 @@
 import db from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";
 
-// Define interfaces for our data structures
+// Type definition for mood data with string-based moods
 interface MoodDataEntry {
   totalScore: number;
   count: number;

@@ -13,16 +13,16 @@ export default async function Header() {
     <header className="container mx-auto">
       <nav className="py-6 px-4 flex justify-between items-center">
         <Link href="/">
-          <Image src={'/images/logo.png'} alt="logo" width={200} height={60} className="h-10 w-auto object-contain" />
+          <Image src={'/images/halologo.png'} alt="logo" width={200} height={60} className="h-20 w-auto object-contain" />
         </Link>
 
         <div className="flex items-center gap-4">
           <SignedIn>
-            <Link href="/dashboard#collections">
+            <Link href="/dashboard">
               <Button variant="outline">
                 <FolderOpen size={18} />
                 <span className="hidden md:inline">
-                  Collections
+                  Dashboard
                 </span>
               </Button>
             </Link>

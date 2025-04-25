@@ -1,6 +1,5 @@
 "use server";
 
-import { getMoodById, MOODS } from "@/data/const/moods";
 import db from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";
 import { getPixabayImage } from "./public";
@@ -12,7 +11,7 @@ export interface JournalEntry {
   id: string
   title: string
   content: string
-  mood: keyof typeof MOODS
+  mood: string // Updated from keyof typeof MOODS to string for AI-analyzed moods
   moodScore: number
   moodImageUrl: string
   moodQuery: string
@@ -48,16 +47,14 @@ export async function createJournalEntry(data: Omit<JournalEntry, 'id' | 'moodIm
 
     if (!user) throw new Error("User not found");
 
-    const mood = MOODS[data.mood.toUpperCase() as keyof typeof MOODS];
-    if (!mood) throw new Error("Invalid mood");
-
+    // AI has already analyzed the mood, so we use the values directly
     const moodImageUrl = await getPixabayImage(data.moodQuery)
     const entry = await db.entry.create({
       data: {
         title: data.title,
         content: data.content,
-        mood: mood.id,
-        moodScore: mood.score,
+        mood: data.mood,
+        moodScore: data.moodScore,
         moodImageUrl: moodImageUrl,
         userId: user.id,
         collectionId: data.collectionId || null,
@@ -116,9 +113,17 @@ export async function getJournalEntries({
       },
     });
 
+    // Instead of relying on getMoodById from the MOODS constant,
+    // we'll use the entry's mood data directly
     const entriesWithMoodData = entries.map((entry) => ({
       ...entry,
-      moodData: getMoodById(entry.mood),
+      // We'll create a simple moodData object with the information we need
+      moodData: {
+        id: entry.mood,
+        // Use first letter uppercase for display
+        label: entry.mood.charAt(0).toUpperCase() + entry.mood.slice(1),
+        score: entry.moodScore
+      },
     }));
 
     return {
@@ -224,13 +229,9 @@ export async function updateJournalEntry(data: any) {
 
     if (!existingEntry) throw new Error("Entry not found");
 
-    // Get mood data
-    const mood = MOODS[data.mood.toUpperCase()];
-    if (!mood) throw new Error("Invalid mood");
-
     // Get new mood image if mood changed
     let moodImageUrl = existingEntry.moodImageUrl;
-    if (existingEntry.mood !== mood.id) {
+    if (existingEntry.mood !== data.mood) {
       moodImageUrl = await getPixabayImage(data.moodQuery);
     }
 
@@ -240,8 +241,8 @@ export async function updateJournalEntry(data: any) {
       data: {
         title: data.title,
         content: data.content,
-        mood: mood.id,
-        moodScore: mood.score,
+        mood: data.mood,
+        moodScore: data.moodScore,
         moodImageUrl,
         collectionId: data.collectionId || null,
       },
