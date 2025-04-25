@@ -25,7 +25,13 @@ const CollectionForm = ({ onSuccess, loading, open, setOpen }: { onSuccess: (dat
   });
 
   const onSubmit = handleSubmit(async (data: z.infer<typeof collectionSchema>) => {
-    onSuccess(data);
+    // Ensure that the data matches the Collection type
+    const collectionData: Collection = {
+      name: data.name as string, // Cast to string to ensure it's required
+      description: data.description,
+    };
+    
+    onSuccess(collectionData);
   });
 
   return (
