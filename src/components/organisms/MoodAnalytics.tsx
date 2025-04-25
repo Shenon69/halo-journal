@@ -24,8 +24,10 @@ import {
   SelectValue,
 } from "@/components/atoms/select";
 import Link from "next/link";
-import { getMoodTrend, getMoodEmoji } from "@/lib/utils";
 import { getAnalytics } from "@/actions/analytics";
+import { Button } from "@/components/atoms/button";
+import { BrainCircuit } from "lucide-react";
+import JournalInsightsDialog from "@/components/molecules/JournalInsightsDialog";
 
 const timeOptions = [
   { value: "7d", label: "Last 7 Days" },
@@ -35,6 +37,7 @@ const timeOptions = [
 
 const MoodAnalytics = () => {
   const [period, setPeriod] = useState("7d");
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const {
     loading,
@@ -132,16 +135,37 @@ const MoodAnalytics = () => {
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader className="pb-2">
+            <Card className="lg:row-span-2">
+              <CardHeader className="">
                 <CardTitle className="text-sm font-medium">
-                  Mood Summary
+                  Get insights from your journals
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold flex items-center gap-2">
+              <CardContent className="space-y-4">
+                {/* <div className="text-lg font-bold flex items-center gap-2 mb-2">
                   {getMoodEmoji(stats.averageScore)}{" "}
                   {getMoodTrend(stats.averageScore)}
+                </div> */}
+                
+                <div className="">
+                  {/* <div className="text-sm mb-2">Get insights from your journals</div> */}
+                  <Button 
+                    onClick={() => setIsDialogOpen(true)}
+                    className="w-full"
+                    variant="outline"
+                  >
+                    <BrainCircuit className="h-4 w-4 mr-2" />
+                    Ask questions about your journal 
+                  </Button>
+                  
+                  <div className="mt-3 text-xs text-muted-foreground">
+                    <p>Examples:</p>
+                    <ul className="list-disc list-inside space-y-1 mt-1">
+                      <li>How was my mood last week?</li>
+                      <li>What did I write about yesterday?</li>
+                      <li>When was I most happy recently?</li>
+                    </ul>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -201,6 +225,13 @@ const MoodAnalytics = () => {
           </Card>
         </div>
       )}
+
+      {/* Journal Insights Dialog */}
+      <JournalInsightsDialog
+        open={isDialogOpen}
+        setOpen={setIsDialogOpen}
+        analyticsData={analytics.data}
+      />
     </>
   );
 };
