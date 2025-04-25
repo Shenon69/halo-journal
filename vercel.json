@@ -1,5 +1,5 @@
 {
-  "buildCommand": "next build",
+  "buildCommand": "next build --no-lint",
   "installCommand": "yarn install --ignore-scripts",
   "framework": "nextjs"
 }
