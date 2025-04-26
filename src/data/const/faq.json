@@ -1,15 +1,15 @@
 [
   {
-    "q": "Is my journal data secure?",
-    "a": "Yes! We use enterprise-grade encryption and security measures to ensure your entries remain private and secure."
+    "q": "How does the AI Insights feature work?",
+    "a": "Our AI analyzes your journal entries to provide personalized insights and answers to your questions. It can even include links to specific journal entries when referencing them."
   },
   {
     "q": "Can I organize my journal entries?",
-    "a": "Yes! Use folders, collections, and tags to keep your entries structured. You can also filter by date, mood, or collection."
+    "a": "Yes! Use collections to group related entries together. You can also filter by date, mood, or collection to easily find past entries."
   },
   {
     "q": "How does the mood tracking work?",
-    "a": "Each entry can be tagged with a mood, and our analytics tool creates visual representations of your emotional journey over time."
+    "a": "Our AI automatically analyzes the sentiment of your entries and assigns a mood score. You'll get visual analytics showing your emotional patterns over time."
   },
   {
     "q": "Is there a mobile app?",

@@ -3,10 +3,20 @@ import { Button } from "@/components/atoms/button";
 import { Card, CardContent } from "@/components/atoms/card";
 import { Skeleton } from "@/components/atoms/skeleton";
 import TestimonialCarousel from "@/components/molecules/TestimonialCarousel";
-import { BarChart2, Book, Calendar, ChevronRight, FileText, Lock, Sparkles } from "lucide-react";
+import { BarChart2, Book, Calendar, ChevronRight, FileText, Sparkles, Lightbulb } from "lucide-react";
 import Link from "next/link";
 import faqs from '@/data/const/faq.json';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/atoms/accordion";
+
+// Helper function to format today's date
+function formatTodayDate() {
+  const today = new Date();
+  return today.toLocaleDateString('en-US', { 
+    weekday: 'short',
+    month: 'short', 
+    day: 'numeric' 
+  });
+}
 
 const features = [
   {
@@ -16,16 +26,16 @@ const features = [
       "Express yourself with a powerful editor supporting markdown, formatting, and more.",
   },
   {
-    icon: Sparkles,
+    icon: Lightbulb,
     title: "Daily Inspiration",
     description:
       "Get inspired with daily prompts and mood-based imagery to spark your creativity.",
   },
   {
-    icon: Lock,
-    title: "Secure & Private",
+    icon: Sparkles,
+    title: "AI Journal Insights",
     description:
-      "Your thoughts are safe with enterprise-grade security and privacy features.",
+      "Ask questions about your entries and get intelligent answers with links to relevant journal entries.",
   },
 ];
 
@@ -41,7 +51,7 @@ export default async function Home() {
         </h1>
         <p className="text-lg md:text-xl text-orange-800 mb-8">
           Capture your thoughts, track your moods, and reflect on your journey
-          in a beautiful, secure space.
+          in a beautiful space.
         </p>
         <div className="relative">
           <div className="absolute inset-0 bg-gradient-to-t from-orange-50 via-transparent to-transparent pointer-events-none z-10" />
@@ -50,7 +60,7 @@ export default async function Home() {
               <div className="flex items-center gap-2">
                 <Calendar className="h-5 w-5 text-orange-600" />
                 <span className="text-orange-900 font-medium">
-                  Today&rsquo;s Entry
+                  Today&rsquo;s Entry - {formatTodayDate()}
                 </span>
               </div>
               <div className="flex gap-2">

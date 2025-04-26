@@ -92,7 +92,10 @@ export const answerJournalQuestion = async (question: string, entriesData: any) 
 
     const prompt = `
 You are an AI assistant analyzing a user's journal entries. Answer the following question based on the journal entries data provided.
-Be empathetic, insightful, and specific in your response. Reference specific entries when relevant. Make the response short and sweet
+Be empathetic, insightful, and specific in your response. Reference specific entries when relevant. Make the response short and sweet.
+
+VERY IMPORTANT: When you reference a specific journal entry, you MUST include the entry ID using this exact format: [entryID:entry-id-here]
+For example, if referring to an entry with ID "abc-123", write something like: "In your entry from March 15 [entryID:abc-123], you mentioned feeling happy..."
 
 Today's date is ${currentDate}. The entries are sorted with the most recent first.
 

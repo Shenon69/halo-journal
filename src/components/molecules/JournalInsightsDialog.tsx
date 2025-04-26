@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { Loader2, Search, Sparkles } from "lucide-react";
+import { useState, useCallback } from "react";
+import { Loader2, Search, Sparkles, X, RefreshCw } from "lucide-react";
 import { Input } from "@/components/atoms/input";
 import { Button } from "@/components/atoms/button";
 import {
@@ -13,6 +13,7 @@ import {
   DialogFooter,
 } from "@/components/atoms/dialog";
 import { answerJournalQuestion } from "@/actions/ai";
+import Link from "next/link";
 
 interface JournalInsightsDialogProps {
   open: boolean;
@@ -20,6 +21,9 @@ interface JournalInsightsDialogProps {
   analyticsData: any;
   initialQuestion?: string;
 }
+
+// Regex to find journal entry IDs in the format [entryID:some-uuid-here]
+const ENTRY_ID_REGEX = /\[entryID:([a-zA-Z0-9-]+)\]/g;
 
 const JournalInsightsDialog = ({ 
   open, 
@@ -62,6 +66,52 @@ const JournalInsightsDialog = ({
     setQuestion(selectedQuestion);
     // Don't automatically ask to avoid unexpected API calls
   };
+  
+  // Function to clear both question and answer
+  const handleClear = () => {
+    setQuestion("");
+    setAnswer("");
+  };
+
+  // Function to process answer text and replace entry IDs with links
+  const processAnswer = useCallback((text: string) => {
+    if (!text) return "";
+    
+    // First check if the answer contains any entry IDs
+    const hasEntryIds = ENTRY_ID_REGEX.test(text);
+    ENTRY_ID_REGEX.lastIndex = 0; // Reset regex state
+    
+    if (!hasEntryIds) return text;
+    
+    // Split the text into parts - text and entry IDs
+    const parts = [];
+    let lastIndex = 0;
+    let match;
+    
+    while ((match = ENTRY_ID_REGEX.exec(text)) !== null) {
+      // Add text before the match
+      if (match.index > lastIndex) {
+        parts.push(text.substring(lastIndex, match.index));
+      }
+      
+      // Add the entry ID as a link component
+      const entryId = match[1];
+      parts.push({ type: 'link', id: entryId });
+      
+      lastIndex = match.index + match[0].length;
+    }
+    
+    // Add any remaining text
+    if (lastIndex < text.length) {
+      parts.push(text.substring(lastIndex));
+    }
+    
+    // Return the processed parts
+    return parts;
+  }, []);
+
+  // Processed answer with links
+  const processedAnswer = processAnswer(answer);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -92,6 +142,17 @@ const JournalInsightsDialog = ({
               {isAsking && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               Ask
             </Button>
+            {(question.trim() || answer) && (
+              <Button
+                variant="ghost"
+                onClick={handleClear}
+                title="Clear"
+                className="p-2"
+                size="icon"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            )}
           </div>
 
           {/* Previous questions */}
@@ -123,7 +184,26 @@ const JournalInsightsDialog = ({
               <div className="prose prose-sm max-w-none">
                 <div className="flex items-start gap-2">
                   <Sparkles className="h-5 w-5 text-orange-500 flex-shrink-0 mt-1" />
-                  <div className="whitespace-pre-wrap">{answer}</div>
+                  <div className="whitespace-pre-wrap">
+                    {Array.isArray(processedAnswer) ? (
+                      processedAnswer.map((part, index) => {
+                        if (typeof part === 'string') {
+                          return <span key={index}>{part}</span>;
+                        } else {
+                          return (
+                            <Link 
+                              href={`/journal/${part.id}`}
+                              key={index}
+                              className="text-orange-500 hover:text-orange-700 underline"
+                              target="_blank"
+                            >
+                              View Entry
+                            </Link>
+                          );
+                        }
+                      })
+                    ) : processedAnswer}
+                  </div>
                 </div>
               </div>
             ) : (
@@ -135,7 +215,18 @@ const JournalInsightsDialog = ({
           </div>
         </div>
 
-        <DialogFooter className="mt-4">
+        <DialogFooter className="mt-4 flex justify-between items-center">
+          {(question.trim() || answer) && (
+            <Button 
+              variant="outline" 
+              onClick={handleClear}
+              className="mr-auto"
+              size="sm"
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Clear
+            </Button>
+          )}
           <Button 
             variant="outline" 
             onClick={() => setOpen(false)}
