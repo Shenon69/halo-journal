@@ -11,12 +11,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/atoms/button';
 import { createJournalEntry, getDraft, getJournalEntry, saveDraft, updateJournalEntry } from '@/actions/journal';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { toast } from 'sonner';
 import useFetch from '@/hooks/useFetch';
 import { Collection, createCollection, getCollections } from '@/actions/collection';
 import CollectionForm from '@/components/molecules/CollectionForm';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Save } from 'lucide-react';
 import { analyzeGeminiAI } from '@/actions/ai';
 
 const ReactQuill = dynamic(() => import("react-quill-new"), { ssr: false })
@@ -27,6 +27,8 @@ export default function WritePage() {
   const editId = searchParams.get("edit");
   const [isCollectionDialogOpen, setIsCollectionDialogOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
+  const [draftSaveStatus, setDraftSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const lastSavedContentRef = useRef<{ title: string, content: string, mood: string }>({ title: '', content: '', mood: '' });
 
   // Fetch Hooks
   const {
@@ -97,24 +99,38 @@ export default function WritePage() {
   // Handle setting form data from draft
   useEffect(() => {
     if (isEditMode && existingEntry) {
-      reset({
+      const formData = {
         title: existingEntry.title || "",
         content: existingEntry.content || "",
         mood: existingEntry.mood || "",
         collectionId: existingEntry.collectionId || "",
-      });
+      };
+      
+      reset(formData);
+      lastSavedContentRef.current = {
+        title: formData.title,
+        content: formData.content,
+        mood: formData.mood,
+      };
       
       // If editing, analyze the content with AI to get the updated mood data
       if (existingEntry.content) {
         analyzeFunction(existingEntry.content);
       }
     } else if (draftData?.success && draftData?.data) {
-      reset({
+      const formData = {
         title: draftData.data.title || "",
         content: draftData.data.content || "",
         mood: draftData.data.mood || "",
         collectionId: "",
-      });
+      };
+      
+      reset(formData);
+      lastSavedContentRef.current = {
+        title: formData.title,
+        content: formData.content,
+        mood: formData.mood,
+      };
       
       // If loading from draft with content, analyze it
       if (draftData.data.content) {
@@ -127,6 +143,7 @@ export default function WritePage() {
         mood: "",
         collectionId: "",
       });
+      lastSavedContentRef.current = { title: '', content: '', mood: '' };
     }
     /* eslint-disable-next-line react-hooks/exhaustive-deps */
   }, [draftData, isEditMode, existingEntry]);
@@ -148,6 +165,7 @@ export default function WritePage() {
       // Clear draft after successful publish
       if (!isEditMode) {
         saveDraftFn({ title: "", content: "", mood: "" });
+        lastSavedContentRef.current = { title: '', content: '', mood: '' };
       }
 
       router.push(
@@ -177,6 +195,50 @@ export default function WritePage() {
     }
   }, [watch("content")]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Add debounced draft auto-saving as user types
+  useEffect(() => {
+    // Skip in edit mode
+    if (isEditMode) return;
+    
+    const title = watch("title");
+    const content = watch("content");
+    const mood = watch("mood");
+    const formData = { title, content, mood };
+    
+    // Only save if content has changed from last saved version and we have some content
+    const hasChanges = 
+      title !== lastSavedContentRef.current.title || 
+      content !== lastSavedContentRef.current.content ||
+      mood !== lastSavedContentRef.current.mood;
+      
+    const hasContent = title.trim() !== "" || content.trim() !== "";
+    
+    if (hasChanges && hasContent) {
+      setDraftSaveStatus('saving');
+      
+      const timer = setTimeout(async () => {
+        await saveDraftFn(formData);
+        lastSavedContentRef.current = { ...formData };
+        setDraftSaveStatus('saved');
+        
+        // Reset the "saved" status after 3 seconds
+        setTimeout(() => {
+          setDraftSaveStatus('idle');
+        }, 3000);
+      }, 2000); // 2 second debounce delay
+      
+      return () => clearTimeout(timer);
+    }
+  }, [watch("title"), watch("content"), watch("mood"), isEditMode]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Show success message when draft is saved automatically
+  useEffect(() => {
+    if (savedDraft?.success && !savingDraft && draftSaveStatus === 'saved') {
+      // Use a more subtle toast for auto-saves
+      toast.success("Draft auto-saved", { duration: 2000 });
+    }
+  }, [savedDraft, savingDraft, draftSaveStatus]);
+
   const onSubmit = handleSubmit(async (data: any) => {
     // First analyze the content with AI
     const content = data.content;
@@ -200,23 +262,6 @@ export default function WritePage() {
     toast.success(`Entry analyzed as: ${analyzedData.emoji} ${analyzedData.mood}`);
   });
 
-  const formData = watch();
-
-  const handleSaveDraft = async () => {
-    if (!isDirty) {
-      toast.error("No changes to save");
-      return;
-    }
-
-    await saveDraftFn(formData);
-  };
-
-  useEffect(() => {
-    if (savedDraft?.success && !savingDraft) {
-      toast.success("Draft saved successfully");
-    }
-  }, [savedDraft, savingDraft])
-
   const handleCreateCollection = async (data: Collection) => {
     createCollectionFn(data);
   };
@@ -230,10 +275,29 @@ export default function WritePage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <form onSubmit={onSubmit} className="space-y-2  mx-auto">
-        <h1 className="text-5xl md:text-6xl gradient-title">
-          {isEditMode ? "Edit Entry" : "What's on your mind?"}
-        </h1>
+      <form onSubmit={onSubmit} className="space-y-2 mx-auto">
+        <div className="flex items-center justify-between">
+          <h1 className="text-5xl md:text-6xl gradient-title">
+            {isEditMode ? "Edit Entry" : "What's on your mind?"}
+          </h1>
+          
+          {!isEditMode && (
+            <div className="flex items-center text-sm">
+              {draftSaveStatus === 'saving' && (
+                <div className="flex items-center gap-2 text-orange-600">
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  <span>Saving...</span>
+                </div>
+              )}
+              {draftSaveStatus === 'saved' && (
+                <div className="flex items-center gap-2 text-green-600">
+                  <Save className="h-3 w-3" />
+                  <span>Saved</span>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
 
         {isLoading && (
           <BarLoader className="mb-4" width={"100%"} color="orange" />
@@ -349,17 +413,6 @@ export default function WritePage() {
         </div>
 
         <div className="space-x-4 flex">
-          {!isEditMode && (
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleSaveDraft}
-              disabled={savingDraft || !isDirty}
-            >
-              {savingDraft && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Save as Draft
-            </Button>
-          )}
           <Button
             type="submit"
             variant="journal"
