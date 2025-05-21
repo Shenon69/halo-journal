@@ -2,7 +2,7 @@ import { getJournalEntry } from "@/actions/journal"
 import { Badge } from "@/components/atoms/badge";
 import DeleteDialog from "@/components/atoms/delete-dialog";
 import EditButton from "@/components/atoms/edit-button";
-import { getMoodColor, getMoodEmoji } from "@/lib/utils";
+import { getMoodColor, getMoodEmoji, getMoodColorClasses, capitalizeFirstLetter } from "@/lib/utils";
 import { format } from "date-fns";
 import Image from "next/image";
 import Link from "next/link";
@@ -14,12 +14,26 @@ export default async function JournalPage({ params }) {
   // Create mood display data using entry properties directly
   const moodColor = getMoodColor(entry.moodScore);
   const moodEmoji = getMoodEmoji(entry.moodScore);
-  const moodLabel = entry.mood.charAt(0).toUpperCase() + entry.mood.slice(1);
+  const moodLabel = capitalizeFirstLetter(entry.mood);
+
+  let imageIsValid = false;
+  if (entry.moodImageUrl) {
+    try {
+      const response = await fetch(entry.moodImageUrl, { 
+        method: 'HEAD',
+        cache: 'no-store' 
+      });
+      imageIsValid = response.ok;
+    } catch (error) {
+      console.error('Error checking image URL:', error);
+      imageIsValid = false;
+    }
+  }
 
   return (
     <>
-      {/* Header with Mood Image */}
-      {entry.moodImageUrl && (
+      {/* Header with Mood Image - only display if image is valid */}
+      {entry.moodImageUrl && imageIsValid && (
         <div className="relative h-48 md:h-64 w-full">
           <Image
             src={entry.moodImageUrl}
@@ -59,16 +73,18 @@ export default async function JournalPage({ params }) {
                 <Badge>Collection: {entry.collection.name}</Badge>
               </Link>
             )}
-            <Badge
-              variant="outline"
-              style={{
-                backgroundColor: `var(--${moodColor}-50)`,
-                color: `var(--${moodColor}-700)`,
-                borderColor: `var(--${moodColor}-200)`,
-              }}
-            >
-              {moodEmoji} Feeling {moodLabel}
-            </Badge>
+            {(() => {
+              const { bgColorClass, textColorClass, borderColorClass } = getMoodColorClasses(moodColor);
+              
+              return (
+                <Badge
+                  variant="outline"
+                  className={`${bgColorClass} ${textColorClass} border ${borderColorClass}`}
+                >
+                  {moodEmoji} Feeling {moodLabel}
+                </Badge>
+              );
+            })()}
           </div>
         </div>
 

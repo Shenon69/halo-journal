@@ -5,7 +5,24 @@ export async function getPixabayImage(query: string) {
     const res = await fetch(`https://pixabay.com/api?q=${query}&key=${process.env.PIXABAY_API_KEY}&min_width=1280&min_height=720&image_type=illustrations&category=feelings`)
 
     const data = await res.json();
-    return data.hits[0]?.largeImageURL || null
+    const imageUrl = data.hits[0]?.largeImageURL || null;
+    
+    // Check if the URL is valid before returning
+    if (imageUrl) {
+      try {
+        const checkRes = await fetch(imageUrl, { method: 'HEAD' });
+        if (!checkRes.ok) {
+          console.warn(`Invalid image URL: ${imageUrl}`);
+          return null;
+        }
+        return imageUrl;
+      } catch (err) {
+        console.error("Error validating image URL:", err);
+        return null;
+      }
+    }
+    
+    return null;
   } catch (error) {
     console.error("Error fetching Pixabay image:", error);
     return null

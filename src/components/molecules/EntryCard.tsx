@@ -2,7 +2,7 @@ import React from "react";
 import { Card, CardContent } from "@/components/atoms/card";
 import Link from "next/link";
 import { format } from "date-fns";
-import { getMoodEmoji } from "@/lib/utils";
+import { getMoodEmoji, getMoodColor, getMoodColorClasses, capitalizeFirstLetter } from "@/lib/utils";
 
 const EntryCard = ({ entry }) => {
   // Use either the mood emoji from moodData or generate one based on score
@@ -29,13 +29,19 @@ const EntryCard = ({ entry }) => {
             </time>
             </div>
           </div>
-          {entry.collection && (
-            <div className="mt-4 flex items-center gap-2">
-              <span className="text-sm px-2 py-1 bg-orange-100 text-orange-800 rounded">
-                {entry.collection.name}
-              </span>
-            </div>
-          )}
+          <div className="mt-4 flex items-center gap-2">
+            {/* Show mood instead of collection */}
+            {(() => {
+              const moodColor = getMoodColor(entry.moodScore || 0);
+              const { bgColorClass, textColorClass, borderColorClass } = getMoodColorClasses(moodColor);
+              
+              return (
+                <span className={`text-sm px-2 py-1 rounded border ${bgColorClass} ${textColorClass} ${borderColorClass}`}>
+                  {moodEmoji} {capitalizeFirstLetter(entry.mood || 'neutral')}
+                </span>
+              );
+            })()}
+          </div>
         </CardContent>
       </Card>
     </Link>
